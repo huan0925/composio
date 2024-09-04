@@ -1,0 +1,39 @@
+import json
+import asyncio
+from pyodide.http import pyfetch
+
+async def get_user():
+    resp = await pyfetch(
+        '/api/userinfo',
+        method = "POST",
+        headers = {'Content-Type': 'application/json'},
+        body = json.dumps({'cookie': PLUGIN_USER_COOKIE})
+    )
+
+    return (await resp.json())['username']
+
+async def get_from_port(conversation, username):
+    try:
+        resp = await pyfetch(
+            'http://127.0.0.1:5001',
+            method="POST",
+            headers={'Content-Type': 'application/json'},
+            body=json.dumps({"conversation": conversation,
+            'username': username})
+        )
+
+        if resp.status == 200:
+            return await resp.json()
+        else:
+            return f"Error{resp.status}"
+
+    except Exception as e:
+        return f"Request failed{e}"
+
+async def main():
+    conversation = CURRENT_CONVERSATION
+    username = await get_user()
+    result = await get_from_port(conversation, username)
+    print("Received from port:", result)
+
+await main()
